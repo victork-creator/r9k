@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gadget Shop</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --brand-color: #0d132b;
+            --accent-orange: #fb923c;
+            --accent-blue: #3b82f6;
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--brand-color);
+            color: white;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        #app {
+            width: 100%;
+            max-width: 448px;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+            border-left: 1px solid var(--glass-border);
+            border-right: 1px solid var(--glass-border);
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+        }
+
+        /* Views management */
+        .view {
+            display: none;
+            padding: 20px;
+            min-height: 100vh;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .view.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Cart Button */
+        .cart-trigger {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            padding: 12px 18px;
+            border-radius: 2rem;
+            border: 1px solid var(--glass-border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .cart-trigger:active { transform: scale(0.9); }
+        .cart-trigger.bump { transform: scale(1.1); box-shadow: 0 0 15px var(--accent-orange); }
+
+        .cart-counter {
+            background: var(--accent-orange);
+            color: white;
+            font-size: 10px;
+            font-weight: 900;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            border: 3px solid var(--brand-color);
+        }
+
+        /* Home View */
+        .home-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        h1.logo {
+            font-size: 1.5rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            font-style: italic;
+            letter-spacing: -1px;
+            margin-bottom: 5px;
+        }
+
+        .sub-logo {
+            color: rgba(255,255,255,0.5);
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 30px;
+        }
+
+        .slider-container {
+            position: relative;
+            width: 100%;
+        }
+
+        .slider {
+            display: flex;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            gap: 20px;
+            padding: 20px 40px;
+            scrollbar-width: none;
+        }
+
+        .slider::-webkit-scrollbar { display: none; }
+
+        .brand-card {
+            flex-shrink: 0;
+            width: 200px;
+            height: 200px;
+            background: white;
+            border-radius: 3rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            scroll-snap-align: center;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .brand-card img {
+            max-width: 100%;
+            max-height: 100%;
+            object-contain: contain;
+        }
+
+        .nav-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: var(--glass-bg);
+            border: none;
+            color: white;
+            padding: 10px;
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        .nav-btn.left { left: 5px; }
+        .nav-btn.right { right: 5px; }
+
+        /* Brand Store View */
+        .store-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding-top: 40px;
+            margin-bottom: 30px;
+        }
+
+        .back-btn {
+            background: var(--glass-bg);
+            border: none;
+            color: white;
+            padding: 10px;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .product-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .product-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 1.5rem;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .product-card:active { transform: scale(0.97); background: rgba(255,255,255,0.15); }
+
+        .product-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex: 1;
+        }
+
+        .product-img-box {
+            width: 70px;
+            height: 70px;
+            background: white;
+            border-radius: 1rem;
+            padding: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .product-img-box img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .product-details h3 {
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        .color-dots {
+            display: flex;
+            gap: 8px;
+        }
+
+        .dot {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid white;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .dot.active { transform: scale(1.2); border-color: var(--accent-orange); }
+
+        .add-hint {
+            color: var(--accent-orange);
+            font-size: 9px;
+            font-weight: 800;
+            text-transform: uppercase;
+            margin-top: 4px;
+        }
+
+        /* Cart View */
+        .cart-items {
+            margin-bottom: 30px;
+        }
+
+        .cart-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: var(--glass-bg);
+            padding: 12px;
+            border-radius: 1rem;
+            margin-bottom: 10px;
+        }
+
+        .cart-item img {
+            width: 50px;
+            height: 50px;
+            object-fit: contain;
+        }
+
+        .cart-item-info { flex: 1; }
+        .cart-item-info p { font-size: 12px; font-weight: 900; }
+        .cart-item-info span { font-size: 10px; color: var(--accent-blue); text-transform: uppercase; }
+
+        .remove-btn {
+            background: transparent;
+            border: none;
+            color: #ff6b6b;
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            cursor: pointer;
+        }
+
+        .shipping-form {
+            background: white;
+            border-radius: 2.5rem;
+            padding: 25px;
+            color: #333;
+        }
+
+        .form-title {
+            text-align: center;
+            font-size: 10px;
+            font-weight: 900;
+            text-transform: uppercase;
+            color: #ccc;
+            margin-bottom: 20px;
+            letter-spacing: 2px;
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 15px;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 35px;
+            height: 35px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .input-icon.user { background: #eef2ff; color: #4f46e5; }
+        .input-icon.map { background: #fff7ed; color: #ea580c; }
+
+        .input-group input {
+            width: 100%;
+            padding: 16px 15px 16px 60px;
+            border-radius: 1rem;
+            border: none;
+            background: #f9fafb;
+            font-weight: 700;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .checkout-btn {
+            width: 100%;
+            padding: 18px;
+            background: black;
+            color: white;
+            border: none;
+            border-radius: 2rem;
+            font-weight: 900;
+            font-size: 16px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 20px;
+            cursor: pointer;
+        }
+
+        .checkout-btn:disabled { background: #eee; color: #ccc; cursor: not-allowed; }
+
+        /* Success View */
+        .success-view {
+            background: var(--accent-blue);
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .check-icon {
+            width: 100px;
+            height: 100px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 30px;
+            animation: bounce 1s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .success-name {
+            font-size: 2.5rem;
+            font-weight: 900;
+            font-style: italic;
+            text-transform: uppercase;
+            margin-bottom: 15px;
+        }
+
+        .address-box {
+            font-size: 20px;
+            font-weight: 900;
+            border-bottom: 4px solid var(--accent-orange);
+            display: inline-block;
+            margin-top: 10px;
+            padding-bottom: 5px;
+        }
+
+        .home-btn {
+            width: 100%;
+            max-width: 250px;
+            background: white;
+            color: var(--accent-blue);
+            padding: 18px;
+            border-radius: 2rem;
+            border: none;
+            font-weight: 900;
+            margin-top: 40px;
+            text-transform: uppercase;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="app">
+        <!-- Persistent Cart Trigger -->
+        <div id="cart-btn" class="cart-trigger" onclick="showView('cart')">
+            <div class="relative">
+                <i data-lucide="shopping-cart"></i>
+                <div id="counter" class="cart-counter" style="display: none;">0</div>
+            </div>
+            <span id="cart-label" style="display: none; font-weight: 900; font-size: 12px; text-transform: uppercase;">Cart</span>
+        </div>
+
+        <!-- Home View -->
+        <section id="view-home" class="view active">
+            <div class="home-content">
+                <h1 class="logo">Gadget Shop</h1>
+                <p class="sub-logo">Choose your brand</p>
+
+                <div class="slider-container">
+                    <button class="nav-btn left" onclick="scrollSlider(-220)"><i data-lucide="chevron-left"></i></button>
+                    <div id="brand-slider" class="slider">
+                        <!-- Brands rendered by JS -->
+                    </div>
+                    <button class="nav-btn right" onclick="scrollSlider(220)"><i data-lucide="chevron-right"></i></button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Brand Store View -->
+        <section id="view-brand" class="view">
+            <div class="store-header">
+                <button class="back-btn" onclick="showView('home')"><i data-lucide="chevron-left"></i></button>
+                <h1 id="brand-title" class="logo">Store</h1>
+            </div>
+            <div id="product-list" class="product-list">
+                <!-- Products rendered by JS -->
+            </div>
+        </section>
+
+        <!-- Cart View -->
+        <section id="view-cart" class="view">
+            <div class="store-header">
+                <button class="back-btn" onclick="showView('brand')"><i data-lucide="chevron-left"></i></button>
+                <h1 class="logo">Cart</h1>
+            </div>
+            
+            <div id="cart-items-container" class="cart-items">
+                <!-- Cart items rendered here -->
+            </div>
+
+            <div class="shipping-form">
+                <p class="form-title">Shipping Form</p>
+                <div class="input-group">
+                    <div class="input-icon user"><i data-lucide="user"></i></div>
+                    <input type="text" id="name-input" placeholder="Your full name" oninput="validateForm()">
+                </div>
+                <div class="input-group">
+                    <div class="input-icon map"><i data-lucide="map-pin"></i></div>
+                    <input type="text" id="address-input" placeholder="Delivery address" oninput="validateForm()">
+                </div>
+                <button id="checkout-btn" class="checkout-btn" disabled onclick="processOrder()">Checkout</button>
+            </div>
+        </section>
+
+        <!-- Success View -->
+        <section id="view-success" class="view success-view">
+            <div class="check-icon">
+                <i data-lucide="check-circle" size="60"></i>
+            </div>
+            <h1 class="success-name">Congratulations, <span id="summary-name"></span>!</h1>
+            <p style="font-weight: 500; opacity: 0.8;">Order successfully placed!<br>Expect delivery at:</p>
+            <div id="summary-address" class="address-box"></div>
+            <button class="home-btn" onclick="location.reload()">Back to Home</button>
+        </section>
+    </div>
+
+    <script>
+        // --- Data ---
+        const brands = [
+            { id: 'apple', name: 'Apple', logo: 'https://www.freepnglogos.com/uploads/apple-logo-png/apple-logo-png-dallas-shootings-don-add-are-speech-zones-used-4.png' },
+            { id: 'samsung', name: 'Samsung', logo: 'https://www.freepnglogos.com/uploads/original-samsung-logo-10.png' },
+            { id: 'xiaomi', name: 'Xiaomi', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ae/Xiaomi_logo_%282021-%29.svg/500px-Xiaomi_logo_%282021-%29.svg.png' },
+            { id: 'nokia', name: 'Nokia', logo: 'https://images.seeklogo.com/logo-png/10/1/nokia-logo-png_seeklogo-100358.png' },
+            { id: 'google', name: 'Google', logo: 'https://www.pngall.com/wp-content/uploads/5/Google-Logo-PNG-Picture.png' }
+        ];
+
+        const appleProducts = [
+            {
+                id: 'i17pm',
+                name: 'iPhone 17 Pro Max',
+                options: [
+                    { color: 'Blue', hex: '#1e3a8a', img: 'https://yabloki.ua/media/cache/sylius_shop_product_original/e2/4c/iphone-17-pro-max-256-gb-navy-now-1.png.webp' },
+                    { color: 'Silver', hex: '#e5e7eb', img: 'https://pngimg.com/d/iphone17_PNG22.png' },
+                    { color: 'Orange', hex: '#fb923c', img: 'https://www.pngall.com/wp-content/uploads/20/iPhone-17-Pro-Max-Artwork-PNG.png' }
+                ]
+            },
+            {
+                id: 'i17p',
+                name: 'iPhone 17 Pro',
+                options: [
+                    { color: 'Blue', hex: '#1e3a8a', img: 'https://yabloki.ua/media/cache/sylius_shop_product_original/e2/4c/iphone-17-pro-max-256-gb-navy-now-1.png.webp' },
+                    { color: 'Silver', hex: '#e5e7eb', img: 'https://pngimg.com/d/iphone17_PNG22.png' },
+                    { color: 'Orange', hex: '#fb923c', img: 'https://www.pngall.com/wp-content/uploads/20/iPhone-17-Pro-Max-Artwork-PNG.png' }
+                ]
+            },
+            {
+                id: 'apm',
+                name: 'AirPods Pro Max',
+                options: [
+                    { color: 'Black', hex: '#111827', img: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ9POn8JrfavL1dxABuJbPplFzZAwS3BQSnHw&s' },
+                    { color: 'Sky Blue', hex: '#7dd3fc', img: 'https://miamicenters.com/wp-content/uploads/2025/06/airpods-blue-12.png' },
+                    { color: 'Silver', hex: '#d1d5db', img: 'https://i0.wp.com/www.techeasypay.com/wp-content/uploads/2020/12/airpods-max-select-silver-202011.png?fit=470%2C556&ssl=1' }
+                ]
+            },
+            {
+                id: 'ap3',
+                name: 'AirPods Pro 3',
+                img: 'https://png.pngtree.com/png-vector/20231104/ourmid/pngtree-apple-airpods-pro-png-image_10477533.png'
+            },
+            {
+                id: 'i17air',
+                name: 'iPhone 17 Air',
+                img: 'https://pngimg.com/uploads/iphone17/small/iphone17_PNG11.png'
+            }
+        ];
+
+        // --- State ---
+        let currentCart = [];
+        let selectedBrandId = null;
+
+        // --- Initializer ---
+        window.onload = () => {
+            renderBrands();
+            lucide.createIcons();
+        };
+
+        // --- Navigation ---
+        function showView(viewId) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.getElementById('view-' + viewId).classList.add('active');
+            
+            // Hide cart btn on success
+            document.getElementById('cart-btn').style.display = viewId === 'success' ? 'none' : 'flex';
+
+            if (viewId === 'cart') renderCart();
+        }
+
+        function scrollSlider(amt) {
+            document.getElementById('brand-slider').scrollBy({ left: amt, behavior: 'smooth' });
+        }
+
+        // --- Rendering ---
+        function renderBrands() {
+            const container = document.getElementById('brand-slider');
+            container.innerHTML = brands.map(b => `
+                <div class="brand-card" onclick="openStore('${b.id}')">
+                    <img src="${b.logo}" alt="${b.name}">
+                </div>
+            `).join('');
+        }
+
+        function openStore(brandId) {
+            selectedBrandId = brandId;
+            document.getElementById('brand-title').innerText = brandId.toUpperCase() + ' Store';
+            
+            const container = document.getElementById('product-list');
+            if (brandId === 'apple') {
+                container.innerHTML = appleProducts.map((p, pIdx) => {
+                    const hasOptions = p.options && p.options.length > 0;
+                    const initialImg = hasOptions ? p.options[0].img : p.img;
+                    const initialColor = hasOptions ? p.options[0].color : '';
+
+                    return `
+                        <div class="product-card" onclick="addToCartFromList(${pIdx})">
+                            <div class="product-info">
+                                <div class="product-img-box">
+                                    <img id="p-img-${pIdx}" src="${initialImg}" alt="">
+                                </div>
+                                <div class="product-details">
+                                    <h3>${p.name}</h3>
+                                    ${hasOptions ? `
+                                        <div class="color-dots">
+                                            ${p.options.map((opt, oIdx) => `
+                                                <div 
+                                                    class="dot ${oIdx === 0 ? 'active' : ''}" 
+                                                    style="background-color: ${opt.hex}"
+                                                    onclick="changeProductVariant(event, ${pIdx}, ${oIdx})"
+                                                    id="dot-${pIdx}-${oIdx}"
+                                                ></div>
+                                            `).join('')}
+                                        </div>
+                                    ` : ''}
+                                    <p class="add-hint">Click to add</p>
+                                </div>
+                            </div>
+                            <i data-lucide="plus" style="color: white; opacity: 0.5"></i>
+                        </div>
+                    `;
+                }).join('');
+                lucide.createIcons();
+            } else {
+                container.innerHTML = `<div style="text-align: center; padding: 40px; opacity: 0.5">Coming soon...</div>`;
+            }
+            showView('brand');
+        }
+
+        // --- Product Logic ---
+        const productVariants = {}; // Track which variant is selected in list
+
+        function changeProductVariant(e, pIdx, oIdx) {
+            e.stopPropagation();
+            const product = appleProducts[pIdx];
+            const variant = product.options[oIdx];
+            
+            // Update UI
+            document.getElementById(`p-img-${pIdx}`).src = variant.img;
+            
+            // Update dots
+            product.options.forEach((_, i) => {
+                document.getElementById(`dot-${pIdx}-${i}`).classList.remove('active');
+            });
+            document.getElementById(`dot-${pIdx}-${oIdx}`).classList.add('active');
+            
+            // Save state
+            productVariants[pIdx] = oIdx;
+        }
+
+        function addToCartFromList(pIdx) {
+            const product = appleProducts[pIdx];
+            const vIdx = productVariants[pIdx] || 0;
+            const variant = product.options ? product.options[vIdx] : null;
+
+            const cartItem = {
+                id: Math.random(),
+                name: product.name,
+                variantName: variant ? variant.color : null,
+                img: variant ? variant.img : product.img
+            };
+
+            currentCart.push(cartItem);
+            updateCartUI();
+        }
+
+        function updateCartUI() {
+            const counter = document.getElementById('counter');
+            const label = document.getElementById('cart-label');
+            const btn = document.getElementById('cart-btn');
+
+            if (currentCart.length > 0) {
+                counter.innerText = currentCart.length;
+                counter.style.display = 'flex';
+                label.style.display = 'block';
+                
+                // Animation
+                btn.classList.add('bump');
+                setTimeout(() => btn.classList.remove('bump'), 300);
+            } else {
+                counter.style.display = 'none';
+                label.style.display = 'none';
+            }
+        }
+
+        // --- Cart Management ---
+        function renderCart() {
+            const container = document.getElementById('cart-items-container');
+            if (currentCart.length === 0) {
+                container.innerHTML = `<div style="text-align:center; padding: 40px; opacity: 0.3">Empty cart</div>`;
+            } else {
+                container.innerHTML = currentCart.map(item => `
+                    <div class="cart-item">
+                        <img src="${item.img}" alt="">
+                        <div class="cart-item-info">
+                            <p>${item.name}</p>
+                            ${item.variantName ? `<span>${item.variantName}</span>` : ''}
+                        </div>
+                        <button class="remove-btn" onclick="removeFromCart(${item.id})">Remove</button>
+                    </div>
+                `).join('');
+            }
+            validateForm();
+        }
+
+        function removeFromCart(id) {
+            currentCart = currentCart.filter(i => i.id !== id);
+            renderCart();
+            updateCartUI();
+        }
+
+        // --- Checkout Flow ---
+        function validateForm() {
+            const name = document.getElementById('name-input').value.trim();
+            const address = document.getElementById('address-input').value.trim();
+            const btn = document.getElementById('checkout-btn');
+            
+            btn.disabled = !(currentCart.length > 0 && name && address);
+        }
+
+        function processOrder() {
+            const name = document.getElementById('name-input').value;
+            const address = document.getElementById('address-input').value;
+
+            document.getElementById('summary-name').innerText = name;
+            document.getElementById('summary-address').innerText = address;
+
+            showView('success');
+            lucide.createIcons();
+        }
+    </script>
+</body>
+</html>
